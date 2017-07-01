@@ -18,7 +18,6 @@ CivShip.prototype.createCivShip = function(){
 
 	this.shipNum = this.game.rnd.integerInRange(0,5);
 
-	console.log("added to civShipGroup");
 	this.sprite = civShipGroup.create(this.originPlanet.x, this.originPlanet.y, "civShipSheet");
 	this.sprite.anchor.setTo(0.5);
 	this.sprite.animations.add('thrust', [this.shipNum*2,(this.shipNum*2)+1]);

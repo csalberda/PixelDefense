@@ -43,8 +43,6 @@ Fighter.prototype.createFighter = function(){
 Fighter.prototype.fighterAI = function(_arrTargets){
   if(this.bFocused) return; //ignore fighter if it is focused (in control by the player)
 
-	console.log(_arrTargets);
-
   this.sprite.body.maxVelocity.set(this.maxVelocity);
 
   //FIND CLOSEST TARGET

@@ -4,6 +4,10 @@ function Enemy(_name, _type, _game) {
 	this.game = _game;
 	this.damage = 10;
 
+
+	this.maxVelocity = 50;
+
+
 	this.createEnemy();
 }
 
@@ -46,6 +50,8 @@ Enemy.prototype.createEnemy = function(){
 },
 
 Enemy.prototype.enemyAI = function(_arrTargets){
+
+	this.sprite.body.maxVelocity.set(this.maxVelocity);
 
 	//FIND CLOSEST TARGET
 	var target = findClosestObjAlive(this.sprite, _arrTargets);

@@ -25,7 +25,6 @@ NPC.prototype.getName = function(){
 }
 
 NPC.prototype.characterSelected = function(){
-  console.log("characterSelected!");
   if(gameInfo.focusObj != null) gameInfo.focusObj.bFocused = false;
   gameInfo.focusObj = this;
   this.bFocused = true;
