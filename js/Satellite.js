@@ -1,7 +1,8 @@
 function Satellite(_name, _type) {
-	NPC.call(this, _name);	// Make this constructor take same params as parent
+	NPC.call(this, _name, satelliteTypeInfo[_type]);	// Make this constructor take same params as parent
 	this.type = _type;
 	this.damage = 10;
+	this.bManualControl = true;
 
   this.createSatellite();
 }
@@ -12,12 +13,7 @@ Satellite.prototype.constructor = Satellite;					// Redefine this constructor to
 
 Satellite.prototype.createSatellite = function(){
 
-  this.bulletGroup = this.game.add.group();
-  this.bulletGroup.enableBody = true;
-  this.bulletGroup.physicsBodyType = Phaser.Physics.ARCADE;
-  this.bulletGroup.createMultiple(10, 'spritesheet', 'missile_1');
-  this.bulletGroup.setAll('anchor.x', 0.5);
-  this.bulletGroup.setAll('anchor.y', 0.5);
+  this.bulletGroup = satelliteBulletGroup;
 
   this.sprite = satelliteGroup.create(this.game.camera.view.centerX, this.game.camera.view.centerY, "spritesheet", 'satellite');
   this.sprite.anchor.setTo(0.5);
@@ -25,6 +21,8 @@ Satellite.prototype.createSatellite = function(){
   this.sprite.body.collideWorldBounds = true;
   this.sprite.inputEnabled = true;
   this.sprite.events.onInputDown.add(this.characterSelected.bind(this));
+
+	this.sprite.data.parentObject = this; //Give sprite a reference to this parent object
 
   this.thrustSprite = this.game.add.sprite(0, this.sprite.height/2, "thrust");
   this.thrustSprite.anchor.setTo(0.5,0);

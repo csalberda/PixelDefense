@@ -1,8 +1,9 @@
 function CivShip(_name, _type, _game) {
-	NPC.call(this, _name);	// Make this constructor take same params as parent
+	NPC.call(this, _name, civShipTypeInfo[_type]);	// Make this constructor take same params as parent
 	this.type = _type;
 	this.game = _game;``
 	this.damage = 10;
+	this.bManualControl = false;
 
   this.createCivShip();
 }
@@ -24,6 +25,8 @@ CivShip.prototype.createCivShip = function(){
 	this.sprite.animations.play('thrust', 16, true);
 	var slope = slopeBetweenObj(this.sprite, this.destPlanet);
 	this.sprite.angle = slope+90;
+
+	this.sprite.data.parentObject = this; //Give sprite a reference to this parent object
 
 	this.game.add.tween(this.sprite.scale).from( {x: 0, y:0}, 3000, Phaser.Easing.Quadratic.InOut, true, 0, 0, false);
 	var travelTime = distBetweenObj(this.originPlanet, this.destPlanet) * 20;

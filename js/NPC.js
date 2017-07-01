@@ -1,21 +1,25 @@
 
-function NPC(_name) {
-  this.name = "NPC_"+_name;
+function NPC(_name, _infoObj) {
+
+  this.name = _infoObj.name+"_"+_name;
+  this.maxHp = _infoObj.maxHp;
+  this.value = _infoObj.value;
+	this.maxThrust = _infoObj.maxThrust;
+	this.maxHp = _infoObj.maxHp;
+	this.maxSheild = _infoObj.maxSheild;
+	this.maxVelocity = _infoObj.maxVelocity;
+	this.shield = _infoObj.shield;
+	this.maxHandling = _infoObj.maxHandling;
+	this.defaultDrag = _infoObj.defaultDrag;
+	this.breaks = _infoObj.breaks;
+	this.bulletDamage = _infoObj.bulletDamage;
+	this.bulletCooldownTime = _infoObj.bulletCooldownTime;
+	this.bulletSpeed = _infoObj.bulletSpeed;
+	this.bulletLifespan = _infoObj.bulletLifespan;
+  this.targetingDistance = _infoObj.targetingDistance;
+
+  this.curHp = this.maxHp;
   this.bFocused = false;
-  this.value = 1000;
-	this.maxThrust = 100;
-	this.maxHp = 100;
-	this.maxSheild = 100;
-	this.maxVelocity = 200;
-	this.shield = 100;
-	this.maxHandling = 200;
-	this.defaultDrag = 50;
-	this.breaks = 100;
-	this.bulletDamage = 5;
-	this.bulletCooldownTime = 500;
-	this.bulletSpeed = 400;
-	this.bulletLifespan = 500;
-  this.targetingDistance = 100;
   this.game = szGame.game;
 
 };
@@ -25,9 +29,11 @@ NPC.prototype.getName = function(){
 }
 
 NPC.prototype.characterSelected = function(){
-  if(gameInfo.focusObj != null) gameInfo.focusObj.bFocused = false;
-  gameInfo.focusObj = this;
-  this.bFocused = true;
+  if(this.bManualControl){
+    if(gameInfo.focusObj != null) gameInfo.focusObj.bFocused = false;
+    gameInfo.focusObj = this;
+    this.bFocused = true;
+  }
 }
 
 NPC.prototype.fireBullet = function() {
@@ -59,6 +65,10 @@ NPC.prototype.createHealthBar = function(){
 
 NPC.prototype.modifyHealth = function(_value, _onDead){
 
+  console.log(this);
+
+  console.log(this.curHp +"/"+ this.maxHp);
+
   this.curHp += _value;
   var scale = this.curHp / this.maxHp;
   this.healthbar.scale.x = scale;
@@ -66,5 +76,5 @@ NPC.prototype.modifyHealth = function(_value, _onDead){
   this.healthbar.tint = arrHealthbarColors[Math.floor(scale*10)];
 
   if(this.curHp <= 0)
-    _onDead();
+    _onDead().bind(this);
 }

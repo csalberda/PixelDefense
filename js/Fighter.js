@@ -1,8 +1,9 @@
 function Fighter(_name, _type, _game) {
-	NPC.call(this, _name);	// Make this constructor take same params as parent
+	NPC.call(this, _name, fighterTypeInfo[_type]);	// Make this constructor take same params as parent
 	this.type = _type;
 	this.game = _game;
 	this.damage = 10;
+	this.bManualControl = true;
 
   this.createFighter();
 }
@@ -13,12 +14,7 @@ Fighter.prototype.constructor = Fighter;					// Redefine this constructor to sel
 
 Fighter.prototype.createFighter = function(){
 
-  this.bulletGroup = this.game.add.group();
-  this.bulletGroup.enableBody = true;
-  this.bulletGroup.physicsBodyType = Phaser.Physics.ARCADE;
-  this.bulletGroup.createMultiple(10, 'spritesheet', 'missile_1');
-  this.bulletGroup.setAll('anchor.x', 0.5);
-  this.bulletGroup.setAll('anchor.y', 0.5);
+  this.bulletGroup = fighterBulletGroup;
 
   this.sprite = fighterGroup.create(this.game.camera.view.centerX, this.game.camera.view.centerY, "spritesheet", 'galaga1');
   this.sprite.anchor.setTo(0.5);
@@ -26,6 +22,8 @@ Fighter.prototype.createFighter = function(){
   this.sprite.body.collideWorldBounds = true;
   this.sprite.inputEnabled = true;
   this.sprite.events.onInputDown.add(this.characterSelected.bind(this));
+
+	this.sprite.data.parentObject = this; //Give sprite a reference to this parent object
 
   this.thrustSprite = this.game.add.sprite(0, this.sprite.height/2, "thrust");
   this.thrustSprite.anchor.setTo(0.5,0);

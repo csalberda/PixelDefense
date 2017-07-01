@@ -20,7 +20,7 @@ szGame.Preloader.prototype = {
       this.game.load.spritesheet('civShipSheet', assetPath+'anims/civShipSheet.png', 16, 32, 12);
       this.game.load.spritesheet('enemyExplosion', assetPath+'anims/explosion.png', 32, 32, 5);
       this.game.load.spritesheet('playerExplosion', assetPath+'anims/player_explosion.png', 32, 32, 4);
-      this.game.load.spritesheet('galagaEnemies', assetPath+'anims/galaga.png', galagaEnemies.frameWidth, galagaEnemies.frameHeight, galagaEnemies.totalFrames);
+      this.game.load.spritesheet('galagaEnemies', assetPath+'anims/galaga.png', 16, 16, 16);
       this.game.load.spritesheet('galagaPlayer', assetPath+'anims/galaga.png', 16, 16, 2);
     },
 

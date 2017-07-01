@@ -41,31 +41,6 @@ var arrFighters = [];
 var arrEnemies = [];
 var arrCivShips = [];
 var arrSatellites = [];
-// var satelliteInfo = {
-// 	maxHp: 50,
-// 	bulletDamage: 5,
-// 	bulletCooldownTime: 1000,
-// 	bulletSpeed: 200,
-// 	bulletLifespan: 2000,
-// 	targetingDistance: 200,
-// 	cost: 500
-// };
-// var enemiesInfo = {
-// 	maxHp: 20,
-//   thrust: 100,
-// 	drag:50,
-// 	maxVelocity: 100,
-// 	bulletDamage: 5,
-// 	bulletCooldownTime: 1000,
-// 	bulletSpeed: 200,
-// 	bulletLifespan: 1000,
-// 	targetingDistance: 200,
-// 	value: 10,
-//   arrTargets: []
-// };
-// var civShipInfo = {
-//   maxHp: 100
-// }
 
 var fightersMenuInfo = {
 	fightersMenuDialog: null
@@ -150,10 +125,11 @@ szGame.Game.prototype = {
 	},
 
   checkPhysicsEvents: function(){
-    this.game.physics.arcade.overlap(fighterBulletGroup, enemyGroup, this.enemyHit, null, this);
-    this.game.physics.arcade.overlap(enemyBulletGroup, fighterGroup, this.fighterHit, null, this);
-    this.game.physics.arcade.overlap(enemyBulletGroup, civShipGroup, this.civShipHit, null, this);
-    this.game.physics.arcade.overlap(satelliteBulletGroup, enemyGroup, this.enemyHit, null, this);
+    //this.game.physics.arcade.overlap(fighterBulletGroup, enemyGroup, function(_bullet, _enemy){ _enemy.data.parentObject.enemyHit(_bullet); }, null, this);
+    //this.game.physics.arcade.overlap(enemyBulletGroup, fighterGroup, this.fighterHit, null, this);
+    //this.game.physics.arcade.overlap(enemyBulletGroup, civShipGroup, this.civShipHit, null, this);
+    //this.game.physics.arcade.overlap(satelliteBulletGroup, enemyGroup, this.enemyHit, null, this);
+
   },
 
 	updateTargeting: function () {
@@ -325,10 +301,11 @@ szGame.Game.prototype = {
 	//FIGHTER *********************************************************************
 	initFighterGroup: function(){
 		fighterGroup = this.game.add.group();
+
 		fighterBulletGroup = this.game.add.group();
 		fighterBulletGroup.enableBody = true;
 		fighterBulletGroup.physicsBodyType = Phaser.Physics.ARCADE;
-		fighterBulletGroup.createMultiple(40, "spritesheet", 'missile_1');
+		fighterBulletGroup.createMultiple(20, "spritesheet", 'missile_1');
 		fighterBulletGroup.setAll('anchor.x', 0.5);
 		fighterBulletGroup.setAll('anchor.y', 0.5);
 	},
@@ -364,7 +341,7 @@ szGame.Game.prototype = {
 	createCivShip: function(){
 		this.closeMenus();
 
-		var newCivShip = new CivShip(arrFighters.length+1, "civShipType:)", this);
+		var newCivShip = new CivShip(arrFighters.length+1, "civShip1", this);
 		arrCivShips.push(newCivShip);
 		this.newHudIcon(newCivShip.sprite);
 
@@ -400,13 +377,19 @@ szGame.Game.prototype = {
 	//SATELLITE ******************************************************************
 	initSatelliteGroup: function(){
 		satelliteGroup = this.game.add.group();
-		satelliteGroup.enableBody = true;
+
+		satelliteBulletGroup = this.game.add.group();
+		satelliteBulletGroup.enableBody = true;
+		satelliteBulletGroup.physicsBodyType = Phaser.Physics.ARCADE;
+		satelliteBulletGroup.createMultiple(20, "spritesheet", 'missile_1');
+		satelliteBulletGroup.setAll('anchor.x', 0.5);
+		satelliteBulletGroup.setAll('anchor.y', 0.5);
 	},
 
 	createSatellite: function(){
 		this.closeMenus();
 
-		var newSatellite = new Satellite(arrSatellites.length+1, "normalSatellite", this);
+		var newSatellite = new Satellite(arrSatellites.length+1, "satellite1", this);
 		arrSatellites.push(newSatellite);
 	},
 
@@ -423,6 +406,7 @@ szGame.Game.prototype = {
 	//ENEMY **********************************************************************
 	initEnemyGroup: function(){
 		enemyGroup = this.game.add.group();
+
 		enemyBulletGroup = this.game.add.group();
 		enemyBulletGroup.enableBody = true;
 		enemyBulletGroup.physicsBodyType = Phaser.Physics.ARCADE;
@@ -452,29 +436,6 @@ szGame.Game.prototype = {
 			arrEnemies.forEach(function(_enemy){ _enemy.enemyAI(arrTargetSprites); }.bind(this));
 		}
   },
-
-	enemyHit: function(_bullet, _enemy) {
-		_bullet.kill();
-		this.modifyHealth(_enemy, -1*_bullet.damage, this.enemyDestroyed.bind(this, _enemy));
-		this.checkWaveComplete();
-	},
-
-	enemyDestroyed: function(_enemy){
-		_enemy.kill();
-		//get rid of this enemy from gameInfo.arrHudTargets
-		_enemy.hudIcon.kill();
-		this.updateHudText();
-
-		var explosion = this.game.add.sprite(_enemy.x, _enemy.y, "enemyExplosion");
-		explosion.anchor.setTo(0.5);
-		explosion.animations.add('explosion');
-		explosion.animations.play('explosion', 16, false, true);
-		explosion.animations.currentAnim.onComplete.add(function(){
-			_enemy.destroy(); //This also removes enemy from enemyGroup
-		}, this);
-
-		this.moneyEvent(_enemy, enemiesInfo.value);
-	},
 
   //PLANET *********************************************************************
 	initPlanetGroup: function(){
@@ -643,6 +604,5 @@ szGame.Game.prototype = {
 	pauseGame: function(_bool){
 		this.game.physics.arcade.isPaused = _bool;
 	}
-
 
 };

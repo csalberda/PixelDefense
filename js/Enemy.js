@@ -1,12 +1,10 @@
 function Enemy(_name, _type, _game) {
-	NPC.call(this, _name);	// Make this constructor take same params as parent
+
+	NPC.call(this, _name, enemyTypeInfo[_type]);	// Make this constructor take same params as parent
 	this.type = _type;
 	this.game = _game;
 	this.damage = 10;
-
-
-	this.maxVelocity = 50;
-
+	this.bManualControl = false;
 
 	this.createEnemy();
 }
@@ -17,12 +15,7 @@ Enemy.prototype.constructor = Enemy;					// Redefine this constructor to self, n
 
 Enemy.prototype.createEnemy = function(){
 
-	this.bulletGroup = this.game.add.group();
-	this.bulletGroup.enableBody = true;
-	this.bulletGroup.physicsBodyType = Phaser.Physics.ARCADE;
-	this.bulletGroup.createMultiple(10, 'spritesheet', 'missile_1');
-	this.bulletGroup.setAll('anchor.x', 0.5);
-	this.bulletGroup.setAll('anchor.y', 0.5);
+	this.bulletGroup = enemyBulletGroup;
 
 	var location;
 	switch (this.game.rnd.integerInRange(0,3)) {
@@ -39,6 +32,8 @@ Enemy.prototype.createEnemy = function(){
 	this.sprite.inputEnabled = true;
 	this.sprite.events.onInputDown.add(this.characterSelected.bind(this));
 
+	this.sprite.data.parentObject = this; //Give sprite a reference to this parent object
+
 	this.thrustSprite = this.game.add.sprite(0, this.sprite.height/2, "thrust");
 	this.thrustSprite.anchor.setTo(0.5,0);
 	this.thrustSprite.alpha = 0;
@@ -47,7 +42,7 @@ Enemy.prototype.createEnemy = function(){
 	this.sprite.addChild(this.thrustSprite);
 
 	this.createHealthBar(this.sprite);
-},
+}
 
 Enemy.prototype.enemyAI = function(_arrTargets){
 
@@ -66,4 +61,29 @@ Enemy.prototype.enemyAI = function(_arrTargets){
 		//FIRE
 		this.fireBullet();
 	}
+}
+
+Enemy.prototype.enemyHit = function(_bullet) {
+	_bullet.kill();
+	this.modifyHealth(-1*_bullet.damage, this.enemyDestroyed);
+	this.game.checkWaveComplete();
+}
+
+Enemy.prototype.enemyDestroyed = function(){
+	//console.log(this);
+
+	this.sprite.kill();
+	//get rid of this enemy from gameInfo.arrHudTargets
+	this.hudIcon.kill();
+	this.game.updateHudText();
+
+	var explosion = this.game.add.sprite(this.sprite.x, this.sprite.y, "enemyExplosion");
+	explosion.anchor.setTo(0.5);
+	explosion.animations.add('explosion');
+	explosion.animations.play('explosion', 16, false, true);
+	explosion.animations.currentAnim.onComplete.add(function(){
+		this.sprite.destroy(); //This also removes enemy from enemyGroup
+	}, this);
+
+	this.game.moneyEvent(this.sprite, this.value);
 }
