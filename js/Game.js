@@ -45,6 +45,9 @@ var arrSatellites = [];
 var fightersMenuInfo = {
 	fightersMenuDialog: null
 }
+var focusDialogInfo = {
+
+}
 
 szGame.Game.prototype = {
 
@@ -125,21 +128,20 @@ szGame.Game.prototype = {
 	},
 
   checkPhysicsEvents: function(){
-    //this.game.physics.arcade.overlap(fighterBulletGroup, enemyGroup, function(_bullet, _enemy){ _enemy.data.parentObject.enemyHit(_bullet); }, null, this);
-    //this.game.physics.arcade.overlap(enemyBulletGroup, fighterGroup, this.fighterHit, null, this);
-    //this.game.physics.arcade.overlap(enemyBulletGroup, civShipGroup, this.civShipHit, null, this);
-    //this.game.physics.arcade.overlap(satelliteBulletGroup, enemyGroup, this.enemyHit, null, this);
-
+    this.game.physics.arcade.overlap(fighterBulletGroup, enemyGroup, function(_bullet, _enemy){ _enemy.data.parentObject.enemyHit(_bullet); }, null, this);
+    this.game.physics.arcade.overlap(enemyBulletGroup, fighterGroup, function(_bullet, _fighter){ _fighter.data.parentObject.fighterHit(_bullet); }, null, this);
+    this.game.physics.arcade.overlap(enemyBulletGroup, civShipGroup, function(_bullet, _civShip){ _civShip.data.parentObject.civShipHit(_bullet); }, null, this);
+    this.game.physics.arcade.overlap(enemyBulletGroup, satelliteGroup, function(_bullet, _satellite){ _satellite.data.parentObject.satelliteHit(_bullet); }, null, this);
+    this.game.physics.arcade.overlap(satelliteBulletGroup, enemyGroup, function(_bullet, _enemy){ _enemy.data.parentObject.enemyHit(_bullet); }, null, this);
   },
 
 	updateTargeting: function () {
 		if(gameInfo.arrHudTargets.length == 0) return;
 
 		var targetingOffset = 12;
-		var pointOfInterest = (gameInfo.focusObj != null)? gameInfo.focusObj : {x:this.game.camera.view.centerX, y:this.game.camera.view.centerY}
+		var pointOfInterest = (gameInfo.focusObj != null)? gameInfo.focusObj.sprite : {x:this.game.camera.view.centerX, y:this.game.camera.view.centerY};
 
 		gameInfo.arrHudTargets.forEach(function(_target){
-
 			if(!_target.alive){
 				_target.hudIcon.kill();
 				return;
@@ -324,13 +326,14 @@ szGame.Game.prototype = {
 		arrEnemies.forEach(function(_enemy){ if(_enemy.sprite.alive) arrTargetSprites.push(_enemy.sprite)});
 
 		//Always run fighter AI since they have to return "home"
-		arrFighters.forEach(function(_fighter){ _fighter.fighterAI(arrTargetSprites); }.bind(this));
-
+		for (var i=arrFighters.length-1; i>=0; i--) {
+			if(arrFighters[i].sprite.alive)
+				arrFighters[i].fighterAI(arrTargetSprites);
+			else
+				arrFighters.splice(i,1); //Remove from arrEnemies
+		}
 	},
 
-	fighterHit: function(_bullet, _fighter) {
-		_bullet.kill();
-	},
 
   //CIV SHIP *******************************************************************
 	initCivShipGroup: function(){
@@ -340,39 +343,19 @@ szGame.Game.prototype = {
 
 	createCivShip: function(){
 		this.closeMenus();
-
 		var newCivShip = new CivShip(arrFighters.length+1, "civShip1", this);
 		arrCivShips.push(newCivShip);
 		this.newHudIcon(newCivShip.sprite);
-
 	},
 
   updateCivShipAI: function(){
-    if(arrCivShips.length != 0)
-      arrCivShips.forEach(function(_civShip){ _civShip.civShipAI(); });
+			for (var i=arrCivShips.length-1; i>=0; i--) {
+				if(arrCivShips[i].sprite.alive)
+					arrCivShips[i].civShipAI();
+				else
+					arrCivShips.splice(i,1); //Remove from arrEnemies
+			}
   },
-
-	civShipHit: function(_bullet, _ship){
-		_bullet.kill();
-		this.modifyHealth(_ship, -1*_bullet.damage, this.civShipDestroyed.bind(this, _ship));
-	},
-
-	civShipDestroyed: function(_ship){
-		_ship.kill();
-
-		_ship.hudIcon.kill();
-		gameInfo.money-=_ship.data.value;
-		this.updateHudText();
-
-		var explosion = this.game.add.sprite(_ship.x, _ship.y, "playerExplosion");
-		explosion.anchor.setTo(0.5);
-		explosion.animations.add('explosion');
-		explosion.animations.play('explosion', 8, false, true);
-		explosion.animations.currentAnim.onComplete.add(function(){
-			_ship.destroy(); //This also removes enemy from enemyGroup
-			this.checkWaveComplete();
-		}, this);
-	},
 
 	//SATELLITE ******************************************************************
 	initSatelliteGroup: function(){
@@ -391,15 +374,23 @@ szGame.Game.prototype = {
 
 		var newSatellite = new Satellite(arrSatellites.length+1, "satellite1", this);
 		arrSatellites.push(newSatellite);
+
+		this.moneyEvent(newSatellite.sprite, -1*newSatellite.value);
 	},
 
   updateSatelliteAI: function(){
 		arrTargetSprites = [];
 		arrEnemies.forEach(function(_enemy){ if(_enemy.sprite.alive) arrTargetSprites.push(_enemy.sprite)});
 
-		if(arrTargetSprites.length > 0)
-			arrSatellites.forEach(function(_satellite){ _satellite.satelliteAI(arrTargetSprites); }.bind(this));
-  },
+		if(arrTargetSprites.length > 0){
+			for (var i=arrSatellites.length-1; i>=0; i--) {
+				if(arrSatellites[i].sprite.alive)
+					arrSatellites[i].satelliteAI(arrTargetSprites);
+				else
+					arrSatellites.splice(i,1); //Remove from arrEnemies
+			}
+		}
+	},
 
 	satelliteHit: function(_bullet, _satellite){},
 
@@ -416,12 +407,10 @@ szGame.Game.prototype = {
 	},
 
 	createEnemy: function(){
-
 		this.closeMenus();
-
 		var newEnemy = new Enemy(arrEnemies.length+1, "galagaGreen", this);
 		arrEnemies.push(newEnemy);
-
+		this.newHudIcon(newEnemy.sprite);
 	},
 
   updateEnemyAI: function(){
@@ -433,7 +422,12 @@ szGame.Game.prototype = {
 		arrCivShips.forEach(function(_civShip){ if(_civShip.sprite.alive) arrTargetSprites.push(_civShip.sprite)});
 
 		if(arrTargetSprites.length > 0){
-			arrEnemies.forEach(function(_enemy){ _enemy.enemyAI(arrTargetSprites); }.bind(this));
+			for (var i=arrEnemies.length-1; i>=0; i--) {
+				if(arrEnemies[i].sprite.alive)
+					arrEnemies[i].enemyAI(arrTargetSprites);
+				else
+					arrEnemies.splice(i,1); //Remove from arrEnemies
+			}
 		}
   },
 
@@ -546,8 +540,8 @@ szGame.Game.prototype = {
 
     this.broadcastMessage("Wave "+gameInfo.wave, function(){
       repeatEvent(
-				gameInfo.wave+4, 	//repeat
-				10000,							//delay
+				gameInfo.wave+6, 	//repeat
+				8000,							//delay
 				this.createEnemy.bind(this),
 				function(){ console.log("done with enemies"); gameInfo.bAllEnemiesSpawned = true; }.bind(this),
 				this

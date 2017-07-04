@@ -1,14 +1,14 @@
-function Satellite(_name, _type) {
+function Satellite(_name, _type, _game) {
 	NPC.call(this, _name, satelliteTypeInfo[_type]);	// Make this constructor take same params as parent
 	this.type = _type;
-	this.damage = 10;
+	this.game = _game;
 	this.bManualControl = true;
 
   this.createSatellite();
 }
 
 Satellite.prototype = Object.create(NPC.prototype); // New prototype inherits parent's prototype
-Satellite.prototype.constructor = Satellite;					// Redefine this constructor to self, not parent
+Satellite.prototype.constructor = Satellite;				// Redefine this constructor to self, not parent
 
 
 Satellite.prototype.createSatellite = function(){
@@ -31,7 +31,7 @@ Satellite.prototype.createSatellite = function(){
   this.thrustSprite.animations.play('thrust', 16, true);
   this.sprite.addChild(this.thrustSprite);
 
-  this.home = {x:this.sprite.x, y:this.sprite.y};
+	this.createHealthBar(this.sprite);
 
 },
 
@@ -49,11 +49,13 @@ Satellite.prototype.satelliteAI = function(_arrTargets){
   this.sprite.angle = slope+90;
 
 	//FIRE
-  this.fireBullet();
+	if(distBetweenObj(this.sprite, target) < this.targetingDistance)
+  	this.fireBullet();
 
 }
 
 Satellite.prototype.manualControl = function(){
+	if(!this.sprite.alive) return;
 
   //TURN LEFT AND RIGHT
   if (this.game.input.keyboard.isDown(Phaser.Keyboard.A))
@@ -72,4 +74,24 @@ Satellite.prototype.manualControl = function(){
   if (this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR) || this.game.input.activePointer.leftButton.isDown)
   this.fireBullet();
 
+}
+
+Satellite.prototype.satelliteHit = function(_bullet) {
+	_bullet.kill();
+	this.modifyHealth(-1*_bullet.damage, this.satelliteDestroyed);
+}
+
+Satellite.prototype.satelliteDestroyed = function(){
+
+	this.sprite.kill();
+
+	var explosion = this.game.add.sprite(this.sprite.x, this.sprite.y, "enemyExplosion");
+	explosion.anchor.setTo(0.5);
+	explosion.animations.add('explosion');
+	explosion.animations.play('explosion', 16, false, true);
+	explosion.animations.currentAnim.onComplete.add(function(){
+		this.sprite.destroy(); //This also removes satellite from satelliteGroup
+	}, this);
+
+	this.game.moneyEvent(this.sprite, -1*this.value);
 }

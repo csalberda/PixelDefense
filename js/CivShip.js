@@ -1,8 +1,7 @@
 function CivShip(_name, _type, _game) {
 	NPC.call(this, _name, civShipTypeInfo[_type]);	// Make this constructor take same params as parent
 	this.type = _type;
-	this.game = _game;``
-	this.damage = 10;
+	this.game = _game;
 	this.bManualControl = false;
 
   this.createCivShip();
@@ -65,4 +64,26 @@ CivShip.prototype.drawTileLine = function(_fromObj, _toObj, _frameName, _alpha){
 	}
 
 	_fromObj.tileLine.height = line.length;
+}
+
+
+
+CivShip.prototype.civShipHit = function(_bullet) {
+	_bullet.kill();
+	this.modifyHealth(-1*_bullet.damage, this.civShipDestroyed);
+}
+
+CivShip.prototype.civShipDestroyed = function(){
+
+	this.sprite.kill();
+
+	var explosion = this.game.add.sprite(this.sprite.x, this.sprite.y, "enemyExplosion");
+	explosion.anchor.setTo(0.5);
+	explosion.animations.add('explosion');
+	explosion.animations.play('explosion', 16, false, true);
+	explosion.animations.currentAnim.onComplete.add(function(){
+		this.sprite.destroy(); //This also removes civShip from civShipGroup
+	}, this);
+
+	this.game.moneyEvent(this.sprite, -1*this.value);
 }

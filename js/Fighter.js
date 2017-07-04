@@ -2,7 +2,6 @@ function Fighter(_name, _type, _game) {
 	NPC.call(this, _name, fighterTypeInfo[_type]);	// Make this constructor take same params as parent
 	this.type = _type;
 	this.game = _game;
-	this.damage = 10;
 	this.bManualControl = true;
 
   this.createFighter();
@@ -45,22 +44,38 @@ Fighter.prototype.fighterAI = function(_arrTargets){
 
   //FIND CLOSEST TARGET
   var target = findClosestObjAlive(this.sprite, _arrTargets);
-  if(target == null) return;
 
-  //ROTATE
-  var slope = slopeBetweenObj(this.sprite, target);
-  this.sprite.angle = slope+90;
-  //THRUST
-  if(distBetweenObj(this.sprite, target) > this.targetingDistance)
-    this.game.physics.arcade.accelerationFromRotation(this.sprite.rotation-1.5708, this.maxThrust, this.sprite.body.acceleration);
-  else{
-    this.sprite.body.acceleration.set(0);
-    //FIRE
-    this.fireBullet();
-  }
+	if(target == null){ //GO HOME
+		target = this.home;
+		//ROTATE
+	  var slope = slopeBetweenObj(this.sprite, target);
+	  this.sprite.angle = slope+90;
+	  //THRUST
+	  if(distBetweenObj(this.sprite, target) > this.targetingDistance)
+	    this.game.physics.arcade.accelerationFromRotation(this.sprite.rotation-1.5708, this.maxThrust, this.sprite.body.acceleration);
+	  else{
+	    this.sprite.body.acceleration.set(0);
+			this.sprite.body.drag.set(this.defaultDrag);
+		}
+	}
+	else{ //ENGAGE ENEMY
+		//ROTATE
+	  var slope = slopeBetweenObj(this.sprite, target);
+	  this.sprite.angle = slope+90;
+	  //THRUST
+	  if(distBetweenObj(this.sprite, target) > this.targetingDistance)
+	    this.game.physics.arcade.accelerationFromRotation(this.sprite.rotation-1.5708, this.maxThrust, this.sprite.body.acceleration);
+	  else{
+	    this.sprite.body.acceleration.set(0);
+			this.sprite.body.drag.set(this.defaultDrag);
+	    //FIRE
+	    this.fireBullet();
+	  }
+	}
 }
 
 Fighter.prototype.manualControl = function(){
+	if(!this.sprite.alive) return;
 
   //THRUST
   if (this.game.input.keyboard.isDown(Phaser.Keyboard.W)){
@@ -95,5 +110,24 @@ Fighter.prototype.manualControl = function(){
   //MISSILES
   if (this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR) || this.game.input.activePointer.leftButton.isDown)
   this.fireBullet();
+
+}
+
+Fighter.prototype.fighterHit = function(_bullet) {
+	_bullet.kill();
+	this.modifyHealth(-1*_bullet.damage, this.fighterDestroyed);
+}
+
+Fighter.prototype.fighterDestroyed = function(){
+
+	this.sprite.kill();
+
+	var explosion = this.game.add.sprite(this.sprite.x, this.sprite.y, "enemyExplosion");
+	explosion.anchor.setTo(0.5);
+	explosion.animations.add('explosion');
+	explosion.animations.play('explosion', 16, false, true);
+	explosion.animations.currentAnim.onComplete.add(function(){
+		this.sprite.destroy(); //This also removes fighter from fighterGroup
+	}, this);
 
 }

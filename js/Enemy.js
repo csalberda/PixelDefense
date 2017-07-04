@@ -3,7 +3,6 @@ function Enemy(_name, _type, _game) {
 	NPC.call(this, _name, enemyTypeInfo[_type]);	// Make this constructor take same params as parent
 	this.type = _type;
 	this.game = _game;
-	this.damage = 10;
 	this.bManualControl = false;
 
 	this.createEnemy();
@@ -70,11 +69,10 @@ Enemy.prototype.enemyHit = function(_bullet) {
 }
 
 Enemy.prototype.enemyDestroyed = function(){
-	//console.log(this);
 
 	this.sprite.kill();
 	//get rid of this enemy from gameInfo.arrHudTargets
-	this.hudIcon.kill();
+	this.sprite.hudIcon.kill();
 	this.game.updateHudText();
 
 	var explosion = this.game.add.sprite(this.sprite.x, this.sprite.y, "enemyExplosion");
@@ -85,5 +83,4 @@ Enemy.prototype.enemyDestroyed = function(){
 		this.sprite.destroy(); //This also removes enemy from enemyGroup
 	}, this);
 
-	this.game.moneyEvent(this.sprite, this.value);
 }

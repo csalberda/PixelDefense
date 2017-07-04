@@ -20,7 +20,6 @@ function NPC(_name, _infoObj) {
 
   this.curHp = this.maxHp;
   this.bFocused = false;
-  this.game = szGame.game;
 
 };
 
@@ -65,16 +64,13 @@ NPC.prototype.createHealthBar = function(){
 
 NPC.prototype.modifyHealth = function(_value, _onDead){
 
-  console.log(this);
-
-  console.log(this.curHp +"/"+ this.maxHp);
-
   this.curHp += _value;
   var scale = this.curHp / this.maxHp;
   this.healthbar.scale.x = scale;
 
   this.healthbar.tint = arrHealthbarColors[Math.floor(scale*10)];
 
-  if(this.curHp <= 0)
-    _onDead().bind(this);
+  if(this.curHp <= 0){
+    var funct = _onDead.bind(this)();
+  }
 }
