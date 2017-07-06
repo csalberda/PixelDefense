@@ -10,7 +10,7 @@ var buildDialogGroup, shipDialogGroup;
 var fighterGroup, satelliteGroup, enemyGroup, planetGroup, civShipGroup;
 var fighterBulletGroup, satelliteBulletGroup, enemyBulletGroup;
 var hudGroup, hudIconGroup;
-var fightersDialogGroup, newFighterDialogGroup;
+var fightersMenuGroup, focusedMenuGroup;
 
 var focusedTile = null;
 var arrPlanetColors = [0xc15757, 0xc17d57, 0xc1a157, 0xc1c157, 0xa4c157, 0x76c157, 0x57c173, 0x57c19a, 0x57c1bd, 0x57aac1, 0x5788c1, 0x5761c1, 0x7557c1, 0x9157c1, 0xb257c1, 0xc157ad, 0xc15783];
@@ -18,7 +18,7 @@ var arrHealthbarColors = [0xff0000,0xff3300,0xff6600,0xff9900,0xffcc00,0xffff00,
 
 var textStyle = {font: "16px Courier", fill:"#ffffff"};
 
-var gameInfo = {
+var gameData = {
 	money:5000,
 	wave:1,
 	focusObj: null,
@@ -26,7 +26,7 @@ var gameInfo = {
 	bAllCivShipsSpawned: true,
   arrHudTargets: []
 };
-var hudInfo = {
+var hudData = {
   textSize: 32,
   moneyText: null,
   buildFighterButton: null,
@@ -42,11 +42,11 @@ var arrEnemies = [];
 var arrCivShips = [];
 var arrSatellites = [];
 
-var fightersMenuInfo = {
-	fightersMenuDialog: null
+var fightersMenuData = {
+	fightersMenu: null
 }
-var focusDialogInfo = {
-
+var focusMenuData = {
+	focusMenu: null
 }
 
 szGame.Game.prototype = {
@@ -76,13 +76,11 @@ szGame.Game.prototype = {
 		this.initEnemyGroup();
 		this.initHudGroup();
 
-		fightersDialogGroup = this.game.add.group();
-		newfighterDialogGroup = this.game.add.group();
-
 		this.createPlanets(5);
 		this.createHUD();
 
 		this.initFightersMenu();
+		this.initFocusMenu();
 
 	},
 
@@ -102,9 +100,9 @@ szGame.Game.prototype = {
 	},
 
 	moveCamera: function(){
-		if(gameInfo.focusObj != null){
-			gameInfo.focusObj.manualControl();
-			this.game.camera.follow(gameInfo.focusObj.sprite, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
+		if(gameData.focusObj != null){
+			gameData.focusObj.manualControl();
+			this.game.camera.follow(gameData.focusObj.sprite, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
 		}
 		else{
 			this.game.camera.target = null;
@@ -136,12 +134,12 @@ szGame.Game.prototype = {
   },
 
 	updateTargeting: function () {
-		if(gameInfo.arrHudTargets.length == 0) return;
+		if(gameData.arrHudTargets.length == 0) return;
 
 		var targetingOffset = 12;
-		var pointOfInterest = (gameInfo.focusObj != null)? gameInfo.focusObj.sprite : {x:this.game.camera.view.centerX, y:this.game.camera.view.centerY};
+		var pointOfInterest = (gameData.focusObj != null)? gameData.focusObj.sprite : {x:this.game.camera.view.centerX, y:this.game.camera.view.centerY};
 
-		gameInfo.arrHudTargets.forEach(function(_target){
+		gameData.arrHudTargets.forEach(function(_target){
 			if(!_target.alive){
 				_target.hudIcon.kill();
 				return;
@@ -207,95 +205,95 @@ szGame.Game.prototype = {
 		corner = hudGroup.create(0,iGameHeight,"spritesheet", "crtCorner");
 		corner.scale.setTo(1,-1);
 
-		hudInfo.moneyText = this.game.add.bitmapText(10, 10, 'font64', "$"+gameInfo.money, hudInfo.textSize);
-		hudGroup.addChild(hudInfo.moneyText);
-		hudInfo.moneyText.anchor.setTo(0, 0.5);
+		hudData.moneyText = this.game.add.bitmapText(10, 10, 'font64', "$"+gameData.money, hudData.textSize);
+		hudGroup.addChild(hudData.moneyText);
+		hudData.moneyText.anchor.setTo(0, 0.5);
 
-		hudInfo.buildFighterButton = hudGroup.create(18, 35, "spritesheet", "shipButton");
-		hudInfo.buildFighterButton.anchor.setTo(0.5);
-		hudInfo.buildFighterButton.inputEnabled = true;
-		hudInfo.buildFighterButton.events.onInputDown.add(this.displayFightersMenu.bind(this));
+		hudData.buildFighterButton = hudGroup.create(18, 35, "spritesheet", "shipButton");
+		hudData.buildFighterButton.anchor.setTo(0.5);
+		hudData.buildFighterButton.inputEnabled = true;
+		hudData.buildFighterButton.events.onInputDown.add(this.displayFightersMenu.bind(this));
 
-		hudInfo.buildSatelliteButton = hudGroup.create(45, 35, "spritesheet", "satelliteButton");
-		hudInfo.buildSatelliteButton.anchor.setTo(0.5);
-		hudInfo.buildSatelliteButton.inputEnabled = true;
-		hudInfo.buildSatelliteButton.events.onInputDown.add(this.createSatellite.bind(this));
+		hudData.buildSatelliteButton = hudGroup.create(45, 35, "spritesheet", "satelliteButton");
+		hudData.buildSatelliteButton.anchor.setTo(0.5);
+		hudData.buildSatelliteButton.inputEnabled = true;
+		hudData.buildSatelliteButton.events.onInputDown.add(this.createSatellite.bind(this));
 
-		hudInfo.waveText = this.game.add.bitmapText(iGameWidth-10, 10, 'font64', "Wave "+gameInfo.wave, hudInfo.textSize);
-		hudGroup.addChild(hudInfo.waveText);
-		hudInfo.waveText.anchor.setTo(1, 0.5);
+		hudData.waveText = this.game.add.bitmapText(iGameWidth-10, 10, 'font64', "Wave "+gameData.wave, hudData.textSize);
+		hudGroup.addChild(hudData.waveText);
+		hudData.waveText.anchor.setTo(1, 0.5);
 
-		hudInfo.enemiesText = this.game.add.bitmapText(iGameWidth-10, 35, 'font64', enemyGroup.countDead()+"/"+enemyGroup.length, hudInfo.textSize);
-		hudGroup.addChild(hudInfo.enemiesText);
-		hudInfo.enemiesText.anchor.setTo(1, 0.5);
+		hudData.enemiesText = this.game.add.bitmapText(iGameWidth-10, 35, 'font64', enemyGroup.countDead()+"/"+enemyGroup.length, hudData.textSize);
+		hudGroup.addChild(hudData.enemiesText);
+		hudData.enemiesText.anchor.setTo(1, 0.5);
 
-		hudInfo.centerText = this.game.add.bitmapText(iGameWidth/2, 15, 'font64', '', hudInfo.textSize);
-		hudGroup.addChild(hudInfo.centerText);
-		hudInfo.centerText.anchor.setTo(0.5);
-		hudInfo.centerText.inputEnabled = true;
-		hudInfo.centerText.events.onInputDown.add(this.centerTextSelected.bind(this, null));
+		hudData.centerText = this.game.add.bitmapText(iGameWidth/2, 15, 'font64', '', hudData.textSize);
+		hudGroup.addChild(hudData.centerText);
+		hudData.centerText.anchor.setTo(0.5);
+		hudData.centerText.inputEnabled = true;
+		hudData.centerText.events.onInputDown.add(this.centerTextSelected.bind(this, null));
 
 		this.setCenterText("Next Wave", this.startNextWave.bind(this));
 
-		hudInfo.shadowBlanket = this.game.add.graphics(0,0);
-		hudInfo.shadowBlanket.beginFill(0x00000);
-		hudInfo.shadowBlanket.drawRect(0, 0, iGameWidth, iGameHeight);
-		hudInfo.shadowBlanket.inputEnabled = true; //consume events
-		hudInfo.shadowBlanket.alpha = 0.7;
-		hudInfo.shadowBlanket.events.onInputDown.add(this.closeMenus.bind(this));
-		hudInfo.shadowBlanket.kill(); //kill for now until it is used
-		hudGroup.addChild(hudInfo.shadowBlanket);
+		hudData.shadowBlanket = this.game.add.graphics(0,0);
+		hudData.shadowBlanket.beginFill(0x00000);
+		hudData.shadowBlanket.drawRect(0, 0, iGameWidth, iGameHeight);
+		hudData.shadowBlanket.inputEnabled = true; //consume events
+		hudData.shadowBlanket.alpha = 0.7;
+		hudData.shadowBlanket.events.onInputDown.add(this.closeMenus.bind(this));
+		hudData.shadowBlanket.kill(); //kill for now until it is used
+		hudGroup.addChild(hudData.shadowBlanket);
 
 	},
 
 	updateHudText: function(){
-		hudInfo.moneyText.setText("$"+gameInfo.money);
-		hudInfo.waveText.setText("Wave "+gameInfo.wave);
-		hudInfo.enemiesText.setText(enemyGroup.countDead()+"/"+enemyGroup.length);
+		hudData.moneyText.setText("$"+gameData.money);
+		hudData.waveText.setText("Wave "+gameData.wave);
+		hudData.enemiesText.setText(enemyGroup.countDead()+"/"+enemyGroup.length);
 	},
 
 	setCenterText: function(_string, _callback){
-		hudInfo.centerText.setText(_string);
+		hudData.centerText.setText(_string);
 
 		if(_callback != undefined){
-			hudInfo.centerText.scale.setTo(1);
-			hudInfo.centerText.bobTween = this.game.add.tween(hudInfo.centerText.scale).to( {x: 1.2, y:1.2}, 500, Phaser.Easing.Quadratic.InOut, true, 0, 0, true).loop(true);
-			hudInfo.centerText.callback = _callback;
+			hudData.centerText.scale.setTo(1);
+			hudData.centerText.bobTween = this.game.add.tween(hudData.centerText.scale).to( {x: 1.2, y:1.2}, 500, Phaser.Easing.Quadratic.InOut, true, 0, 0, true).loop(true);
+			hudData.centerText.callback = _callback;
 		}
 		else
-			hudInfo.centerText.callback = null;
+			hudData.centerText.callback = null;
 	},
 
 	centerTextSelected: function(){
-		hudInfo.centerText.bobTween.stop();
-		hudInfo.centerText.scale.setTo(0);
+		hudData.centerText.bobTween.stop();
+		hudData.centerText.scale.setTo(0);
 
-		if(hudInfo.centerText.callback != null) hudInfo.centerText.callback();
+		if(hudData.centerText.callback != null) hudData.centerText.callback();
 	},
 
 	broadcastMessage: function(_message, _onComplete){
-		if(hudInfo.broadcastText == null){
-			hudInfo.broadcastText = this.game.add.bitmapText(iGameWidth/2, iGameHeight/2, 'font64', "", 64);
-			hudGroup.addChild(hudInfo.broadcastText);
-			hudInfo.broadcastText.anchor.setTo(0.5);
+		if(hudData.broadcastText == null){
+			hudData.broadcastText = this.game.add.bitmapText(iGameWidth/2, iGameHeight/2, 'font64', "", 64);
+			hudGroup.addChild(hudData.broadcastText);
+			hudData.broadcastText.anchor.setTo(0.5);
 		}
 
-		hudInfo.broadcastText.setText(_message);
-		hudInfo.broadcastText.position.setTo(iGameWidth/2, iGameHeight/2);
-		hudInfo.broadcastText.alpha = 1;
-		hudInfo.broadcastText.revive();
+		hudData.broadcastText.setText(_message);
+		hudData.broadcastText.position.setTo(iGameWidth/2, iGameHeight/2);
+		hudData.broadcastText.alpha = 1;
+		hudData.broadcastText.revive();
 
-		var fadeInTween = this.game.add.tween(hudInfo.broadcastText).from( {alpha:0}, 1000, Phaser.Easing.Quadratic.Out, true, 0, 0, false);
-		var inTween = this.game.add.tween(hudInfo.broadcastText).from( {y:iGameHeight}, 1000, Phaser.Easing.Quadratic.Out, true, 0, 0, false);
+		var fadeInTween = this.game.add.tween(hudData.broadcastText).from( {alpha:0}, 1000, Phaser.Easing.Quadratic.Out, true, 0, 0, false);
+		var inTween = this.game.add.tween(hudData.broadcastText).from( {y:iGameHeight}, 1000, Phaser.Easing.Quadratic.Out, true, 0, 0, false);
 
-		var fadeOutTween = this.game.add.tween(hudInfo.broadcastText).to( {alpha:0}, 1000, Phaser.Easing.Quadratic.In, false, 0, 0, false);
-		var outTween = this.game.add.tween(hudInfo.broadcastText).to( {y:0}, 1000, Phaser.Easing.Quadratic.In, false, 0, 0, false);
+		var fadeOutTween = this.game.add.tween(hudData.broadcastText).to( {alpha:0}, 1000, Phaser.Easing.Quadratic.In, false, 0, 0, false);
+		var outTween = this.game.add.tween(hudData.broadcastText).to( {y:0}, 1000, Phaser.Easing.Quadratic.In, false, 0, 0, false);
 
 		fadeInTween.chain(fadeOutTween);
 		inTween.chain(outTween);
 
 		outTween.onComplete.add(function(){
-			hudInfo.broadcastText.kill();
+			hudData.broadcastText.kill();
 			if(_onComplete != undefined) _onComplete();
 		}, this);
 	},
@@ -342,7 +340,6 @@ szGame.Game.prototype = {
 	},
 
 	createCivShip: function(){
-		this.closeMenus();
 		var newCivShip = new CivShip(arrFighters.length+1, "civShip1", this);
 		arrCivShips.push(newCivShip);
 		this.newHudIcon(newCivShip.sprite);
@@ -407,7 +404,6 @@ szGame.Game.prototype = {
 	},
 
 	createEnemy: function(){
-		this.closeMenus();
 		var newEnemy = new Enemy(arrEnemies.length+1, "galagaGreen", this);
 		arrEnemies.push(newEnemy);
 		this.newHudIcon(newEnemy.sprite);
@@ -458,59 +454,131 @@ szGame.Game.prototype = {
 
 	//FIGHTERS MENU ************************************************************
 	initFightersMenu: function(){
-		fightersDialogGroup.fixedToCamera = true;
+		fightersMenuGroup = this.game.add.group();
+		fightersMenuGroup.fixedToCamera = true;
 
 		var storeWidth = 400;
 		var storeHeight = 500;
 
-		fightersMenuInfo.fightersMenuDialog = new Phaser.NinePatchImage(this, iGameWidth/2, (iGameHeight-storeHeight)/2, "dialogNine", null);
-		fightersMenuInfo.fightersMenuDialog.anchor.setTo(0.5, 0);
-		fightersMenuInfo.fightersMenuDialog.targetWidth = storeWidth;
-		fightersMenuInfo.fightersMenuDialog.targetHeight = storeHeight;
-		fightersMenuInfo.fightersMenuDialog.inputEnabled = true; //consume events
-		fightersMenuInfo.fightersMenuDialog.UpdateImageSizes(); //Needed for changing the anchor
-		fightersDialogGroup.add(fightersMenuInfo.fightersMenuDialog);
+		fightersMenuData.fightersMenu = new Phaser.NinePatchImage(this, iGameWidth/2, (iGameHeight-storeHeight)/2, "dialogNine", null);
+		fightersMenuData.fightersMenu.anchor.setTo(0.5, 0);
+		fightersMenuData.fightersMenu.targetWidth = storeWidth;
+		fightersMenuData.fightersMenu.targetHeight = storeHeight;
+		fightersMenuData.fightersMenu.inputEnabled = true; //consume events
+		fightersMenuData.fightersMenu.UpdateImageSizes(); //Needed for changing the anchor
+		fightersMenuGroup.add(fightersMenuData.fightersMenu);
 
 		var newFighterText = this.game.add.bitmapText(0, 16, 'font64', "Fighters");
-		fightersMenuInfo.fightersMenuDialog.addChild(newFighterText);
+		fightersMenuData.fightersMenu.addChild(newFighterText);
 		newFighterText.anchor.setTo(0.5);
 
 		var newTray = new Phaser.NinePatchImage(this, 0, newFighterText.bottom+8, "trayNine", null);
 		newTray.anchor.setTo(0.5, 0);
 		newTray.targetWidth = storeWidth-32;
-		newTray.targetHeight = fightersMenuInfo.fightersMenuDialog.targetHeight-100;
-		fightersMenuInfo.fightersMenuDialog.addChild(newTray);
+		newTray.targetHeight = fightersMenuData.fightersMenu.targetHeight-100;
+		fightersMenuData.fightersMenu.addChild(newTray);
 		newTray.UpdateImageSizes(); //Needed for changing the anchor
 
 		var button = new Phaser.NinePatchImage(this, 0, newTray.y + newTray.targetHeight + 8, "buttonNine", null);
 		button.anchor.setTo(0.5, 0);
 		button.targetWidth = storeWidth-32;
 		button.targetHeight = 50;
-		fightersMenuInfo.fightersMenuDialog.addChild(button);
+		fightersMenuData.fightersMenu.addChild(button);
 		button.UpdateImageSizes(); //Needed for changing the anchor
 		button.inputEnabled = true; //consume events
 		button.events.onInputDown.add(this.createFighter.bind(this));
 
 		var newFighterText = this.game.add.bitmapText(0, button.y+(button.targetHeight/2), 'font64', "New Fighter");
 		newFighterText.tint = 0x000000;
-		fightersMenuInfo.fightersMenuDialog.addChild(newFighterText);
+		fightersMenuData.fightersMenu.addChild(newFighterText);
 		newFighterText.anchor.setTo(0.5);
 
 		//kill until opened
-		fightersMenuInfo.fightersMenuDialog.kill();
+		fightersMenuData.fightersMenu.kill();
 	},
 
 	displayFightersMenu: function(){
 		this.pauseGame();
 
-		hudInfo.shadowBlanket.revive();
-		fightersMenuInfo.fightersMenuDialog.revive();
+		hudData.shadowBlanket.revive();
+		fightersMenuData.fightersMenu.revive();
+	},
+
+	//FIGHTERS MENU ************************************************************
+	initFocusMenu: function(){
+		focusMenuGroup = this.game.add.group();
+		focusMenuGroup.fixedToCamera = true;
+
+		var storeWidth = 110;
+		var storeHeight = 110;
+
+		focusMenuData.exitBg = new Phaser.NinePatchImage(this, iGameWidth, iGameHeight, "dialogNine", null, "ff0000");
+		focusMenuData.exitBg.anchor.setTo(0.5,1);
+		focusMenuData.exitBg.targetWidth = 64;
+		focusMenuData.exitBg.targetHeight = 100;
+		focusMenuData.exitBg.inputEnabled = true;
+		focusMenuData.exitBg.events.onInputDown.add(this.hideFocusMenu);
+		focusMenuData.exitBg.UpdateImageSizes(); //Needed for changing the anchor
+		focusMenuGroup.add(focusMenuData.exitBg);
+
+		focusMenuData.exitText = this.game.add.bitmapText(iGameWidth-12, iGameHeight-80, 'font64', "X");
+		focusMenuData.exitText.anchor.setTo(0.5);
+		focusMenuGroup.add(focusMenuData.exitText);
+
+		focusMenuData.healthBg = new Phaser.NinePatchImage(this, iGameWidth, iGameHeight, "dialogNine", null);
+		focusMenuData.healthBg.anchor.setTo(1,0.5);
+		focusMenuData.healthBg.targetWidth = 200;
+		focusMenuData.healthBg.targetHeight = 64;
+		focusMenuData.healthBg.inputEnabled = true; //consume events
+		focusMenuData.healthBg.UpdateImageSizes(); //Needed for changing the anchor
+		focusMenuGroup.add(focusMenuData.healthBg);
+
+		focusMenuData.healthText = this.game.add.bitmapText(iGameWidth-128, iGameHeight-12, 'font64', "20/100");
+		focusMenuData.healthText.anchor.setTo(0.5);
+		focusMenuGroup.add(focusMenuData.healthText);
+
+		focusMenuData.focusMenuBg = new Phaser.NinePatchImage(this, iGameWidth, iGameHeight, "dialogNine", null);
+		focusMenuData.focusMenuBg.anchor.setTo(0.5);
+		focusMenuData.focusMenuBg.angle = 45;
+		focusMenuData.focusMenuBg.targetWidth = storeWidth;
+		focusMenuData.focusMenuBg.targetHeight = storeHeight;
+		focusMenuData.focusMenuBg.inputEnabled = true; //consume events
+		focusMenuData.focusMenuBg.UpdateImageSizes(); //Needed for changing the anchor
+		focusMenuGroup.add(focusMenuData.focusMenuBg);
+
+		focusMenuData.sprite = focusMenuGroup.create(iGameWidth-20, iGameHeight-20, "spritesheet", 'galaga1');
+		focusMenuData.sprite.anchor.setTo(0.5);
+
+
+
+		//kill until opened
+		focusMenuGroup.visible = false;
+	},
+
+	showFocusMenu: function(_npc){
+
+		focusMenuData.sprite.loadTexture(_npc.sprite.key);
+		if(focusMenuData.sprite.frameName != "")
+			focusMenuData.sprite.frameName = _npc.sprite.frameName;
+
+
+
+
+		focusMenuGroup.visible = true;
+	},
+
+	hideFocusMenu: function(){
+		focusMenuGroup.visible = false;
+		if(gameData.focusObj != null){
+			gameData.focusObj.bFocused = false;
+			gameData.focusObj = null;
+		}
 	},
 
   //MISC FUNCTIONS *************************************************************
 	closeMenus: function(){
-		hudInfo.shadowBlanket.kill();
-		fightersMenuInfo.fightersMenuDialog.kill();
+		hudData.shadowBlanket.kill();
+		fightersMenuData.fightersMenu.kill();
 	},
 
   starFlash: function(){
@@ -528,29 +596,29 @@ szGame.Game.prototype = {
   },
 
   startNextWave: function(){
-		if(!gameInfo.bAllEnemiesSpawned || !gameInfo.bAllCivShipsSpawned) return;
+		if(!gameData.bAllEnemiesSpawned || !gameData.bAllCivShipsSpawned) return;
 
     //INIT NEXT WAVE
-    gameInfo.enemies+=5;
+    gameData.enemies+=5;
     this.updateHudText();
 
-		gameInfo.bAllEnemiesSpawned = false;
-		gameInfo.bAllCivShipsSpawned = false;
+		gameData.bAllEnemiesSpawned = false;
+		gameData.bAllCivShipsSpawned = false;
 
 
-    this.broadcastMessage("Wave "+gameInfo.wave, function(){
+    this.broadcastMessage("Wave "+gameData.wave, function(){
       repeatEvent(
-				gameInfo.wave+6, 	//repeat
+				gameData.wave+6, 	//repeat
 				8000,							//delay
 				this.createEnemy.bind(this),
-				function(){ console.log("done with enemies"); gameInfo.bAllEnemiesSpawned = true; }.bind(this),
+				function(){ console.log("done with enemies"); gameData.bAllEnemiesSpawned = true; }.bind(this),
 				this
 			);
 			repeatEvent(
-				gameInfo.wave+4, 	//repeat
+				gameData.wave+4, 	//repeat
 				10000,							//delay
 				this.createCivShip.bind(this),
-				function(){ console.log("done with civShips"); gameInfo.bAllCivShipsSpawned = true; }.bind(this),
+				function(){ console.log("done with civShips"); gameData.bAllCivShipsSpawned = true; }.bind(this),
 				this
 			);
     }.bind(this));
@@ -567,12 +635,12 @@ szGame.Game.prototype = {
     var fromScale = 64/((_parent.width>_parent.height)?_parent._frame.width:_parent._frame.height);
     this.game.add.tween(_parent.hudIcon.scale).from( {x: fromScale, y:fromScale}, 1000, Phaser.Easing.Quadratic.Out, true, 0, 0, false);
 
-    gameInfo.arrHudTargets.push(_parent);
+    gameData.arrHudTargets.push(_parent);
   },
 
 	moneyEvent: function(_location, _value){
-		gameInfo.money += _value;
-		hudInfo.moneyText.setText("$"+gameInfo.money);
+		gameData.money += _value;
+		hudData.moneyText.setText("$"+gameData.money);
 
 		var moneyText = this.game.add.bitmapText(_location.x, _location.y, 'font64', "$"+_value, 32);
 
@@ -586,10 +654,10 @@ szGame.Game.prototype = {
 	checkWaveComplete: function(){
 		if(enemyGroup.length > 0) return;
 		if(civShipGroup.length > 0) return;
-		if(!gameInfo.bAllEnemiesSpawned || !gameInfo.bAllCivShipsSpawned) return;
+		if(!gameData.bAllEnemiesSpawned || !gameData.bAllCivShipsSpawned) return;
 
-    this.broadcastMessage("Wave "+gameInfo.wave+" Complete", function(){
-			gameInfo.wave++;
+    this.broadcastMessage("Wave "+gameData.wave+" Complete", function(){
+			gameData.wave++;
 			this.setCenterText("Next Wave", this.startNextWave.bind(this));
 		}.bind(this));
 

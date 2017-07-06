@@ -24,15 +24,20 @@ CivShip.prototype.createCivShip = function(){
 	this.sprite.animations.play('thrust', 16, true);
 	var slope = slopeBetweenObj(this.sprite, this.destPlanet);
 	this.sprite.angle = slope+90;
+	this.sprite.inputEnabled = true;
+	this.sprite.events.onInputDown.add(this.characterSelected.bind(this));
 
 	this.sprite.data.parentObject = this; //Give sprite a reference to this parent object
 
-	this.game.add.tween(this.sprite.scale).from( {x: 0, y:0}, 3000, Phaser.Easing.Quadratic.InOut, true, 0, 0, false);
-	var travelTime = distBetweenObj(this.originPlanet, this.destPlanet) * 20;
-	this.travelTween = this.game.add.tween(this.sprite).to( {x: this.destPlanet.x, y:this.destPlanet.y}, travelTime, Phaser.Easing.Quadratic.InOut, true, 0, 0, false);
+	this.ascentTween = this.game.add.tween(this.sprite.scale).from( {x: 0, y:0}, 3000, Phaser.Easing.Quadratic.InOut, true, 0, 0, false);
+	this.travelTime = distBetweenObj(this.originPlanet, this.destPlanet) * 20;
+	this.travelTween = this.game.add.tween(this.sprite).to( {x: this.destPlanet.x, y:this.destPlanet.y}, this.travelTime, Phaser.Easing.Quadratic.InOut, false, 0, 0, false);
 	this.decentTween = this.game.add.tween(this.sprite.scale).to( {x: 0, y:0}, 3000, Phaser.Easing.Quadratic.InOut, false, 0, 0, false);
+
+	this.ascentTween.chain(this.travelTween);
 	this.travelTween.chain(this.decentTween);
 	this.decentTween.onComplete.add(this.civShipDelivered, this);
+
 
 	this.tileLine = null;
 

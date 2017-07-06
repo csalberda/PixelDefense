@@ -23,16 +23,14 @@ function NPC(_name, _infoObj) {
 
 };
 
-NPC.prototype.getName = function(){
-  return "His name is "+ this.name;
-}
-
 NPC.prototype.characterSelected = function(){
   if(this.bManualControl){
-    if(gameInfo.focusObj != null) gameInfo.focusObj.bFocused = false;
-    gameInfo.focusObj = this;
+    if(gameData.focusObj != null) gameData.focusObj.bFocused = false;
+    gameData.focusObj = this;
     this.bFocused = true;
   }
+
+  this.game.showFocusMenu(this);
 }
 
 NPC.prototype.fireBullet = function() {
@@ -64,13 +62,21 @@ NPC.prototype.createHealthBar = function(){
 
 NPC.prototype.modifyHealth = function(_value, _onDead){
 
+  //Update this npc
   this.curHp += _value;
   var scale = this.curHp / this.maxHp;
   this.healthbar.scale.x = scale;
-
   this.healthbar.tint = arrHealthbarColors[Math.floor(scale*10)];
+
+  //Update focusMenu
+  if(this.bFocused){
+    focusMenuData.healthText.setText(this.curHp+"/"+this.maxHp);
+    focusMenuData.healthText.tint = arrHealthbarColors[Math.floor(scale*10)];
+  }
 
   if(this.curHp <= 0){
     var funct = _onDead.bind(this)();
+    //Update focusMenu
+    if(this.bFocused) focusMenuGroup.visible = false;
   }
 }

@@ -51,11 +51,14 @@ Fighter.prototype.fighterAI = function(_arrTargets){
 	  var slope = slopeBetweenObj(this.sprite, target);
 	  this.sprite.angle = slope+90;
 	  //THRUST
-	  if(distBetweenObj(this.sprite, target) > this.targetingDistance)
+	  if(distBetweenObj(this.sprite, target) > this.targetingDistance){
 	    this.game.physics.arcade.accelerationFromRotation(this.sprite.rotation-1.5708, this.maxThrust, this.sprite.body.acceleration);
+			this.thrustSprite.alpha = 1;
+		}
 	  else{
 	    this.sprite.body.acceleration.set(0);
 			this.sprite.body.drag.set(this.defaultDrag);
+			this.thrustSprite.alpha = 0;
 		}
 	}
 	else{ //ENGAGE ENEMY
@@ -63,11 +66,14 @@ Fighter.prototype.fighterAI = function(_arrTargets){
 	  var slope = slopeBetweenObj(this.sprite, target);
 	  this.sprite.angle = slope+90;
 	  //THRUST
-	  if(distBetweenObj(this.sprite, target) > this.targetingDistance)
+	  if(distBetweenObj(this.sprite, target) > this.targetingDistance){
 	    this.game.physics.arcade.accelerationFromRotation(this.sprite.rotation-1.5708, this.maxThrust, this.sprite.body.acceleration);
-	  else{
+			this.thrustSprite.alpha = 1;
+		}
+		else{
 	    this.sprite.body.acceleration.set(0);
 			this.sprite.body.drag.set(this.defaultDrag);
+			this.thrustSprite.alpha = 0;
 	    //FIRE
 	    this.fireBullet();
 	  }

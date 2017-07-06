@@ -93,5 +93,4 @@ Satellite.prototype.satelliteDestroyed = function(){
 		this.sprite.destroy(); //This also removes satellite from satelliteGroup
 	}, this);
 
-	this.game.moneyEvent(this.sprite, -1*this.value);
 }
