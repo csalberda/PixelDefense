@@ -549,17 +549,23 @@ szGame.Game.prototype = {
 		focusMenuData.sprite = focusMenuGroup.create(iGameWidth-20, iGameHeight-20, "spritesheet", 'galaga1');
 		focusMenuData.sprite.anchor.setTo(0.5);
 
-
-
 		//kill until opened
 		focusMenuGroup.visible = false;
 	},
 
 	showFocusMenu: function(_npc){
 
+		//update sprite
 		focusMenuData.sprite.loadTexture(_npc.sprite.key);
 		if(focusMenuData.sprite.frameName != "")
 			focusMenuData.sprite.frameName = _npc.sprite.frameName;
+
+		//update health
+		var scale = _npc.curHp / _npc.maxHp;
+		focusMenuData.healthText.setText(_npc.curHp+"/"+_npc.maxHp);
+		var tint = (scale == 1)? arrHealthbarColors[9] : arrHealthbarColors[Math.floor(scale*10)]
+	  focusMenuData.healthText.tint = tint;
+
 
 
 
