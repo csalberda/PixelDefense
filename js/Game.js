@@ -10,7 +10,7 @@ var buildDialogGroup, shipDialogGroup;
 var fighterGroup, satelliteGroup, enemyGroup, planetGroup, civShipGroup;
 var fighterBulletGroup, satelliteBulletGroup, enemyBulletGroup;
 var hudGroup, hudIconGroup;
-var fightersMenuGroup, focusedMenuGroup;
+var focusedMenuGroup, fightersMenuGroup, npcInfoMenuGroup;
 
 var focusedTile = null;
 var arrPlanetColors = [0xc15757, 0xc17d57, 0xc1a157, 0xc1c157, 0xa4c157, 0x76c157, 0x57c173, 0x57c19a, 0x57c1bd, 0x57aac1, 0x5788c1, 0x5761c1, 0x7557c1, 0x9157c1, 0xb257c1, 0xc157ad, 0xc15783];
@@ -42,12 +42,16 @@ var arrEnemies = [];
 var arrCivShips = [];
 var arrSatellites = [];
 
-var fightersMenuData = {
-	fightersMenu: null
-}
 var focusMenuData = {
 	focusMenu: null
 }
+var npcInfoMenuData = {
+	infoMenu: null
+}
+var fightersMenuData = {
+	fightersMenu: null
+}
+
 
 szGame.Game.prototype = {
 
@@ -80,6 +84,7 @@ szGame.Game.prototype = {
 		this.createHUD();
 
 		this.initFightersMenu();
+		this.initNPCinfoMenu();
 		this.initFocusMenu();
 
 	},
@@ -212,7 +217,7 @@ szGame.Game.prototype = {
 		hudData.buildFighterButton = hudGroup.create(18, 35, "spritesheet", "shipButton");
 		hudData.buildFighterButton.anchor.setTo(0.5);
 		hudData.buildFighterButton.inputEnabled = true;
-		hudData.buildFighterButton.events.onInputDown.add(this.displayFightersMenu.bind(this));
+		hudData.buildFighterButton.events.onInputDown.add(this.showFightersMenu.bind(this));
 
 		hudData.buildSatelliteButton = hudGroup.create(45, 35, "spritesheet", "satelliteButton");
 		hudData.buildSatelliteButton.anchor.setTo(0.5);
@@ -444,67 +449,13 @@ szGame.Game.prototype = {
 
 			this.newHudIcon(planet);
 		}
-
-
 	},
 
 	planetHit: function(_bullet, _planet) {
 		_bullet.kill();
 	},
 
-	//FIGHTERS MENU ************************************************************
-	initFightersMenu: function(){
-		fightersMenuGroup = this.game.add.group();
-		fightersMenuGroup.fixedToCamera = true;
-
-		var storeWidth = 400;
-		var storeHeight = 500;
-
-		fightersMenuData.fightersMenu = new Phaser.NinePatchImage(this, iGameWidth/2, (iGameHeight-storeHeight)/2, "dialogNine", null);
-		fightersMenuData.fightersMenu.anchor.setTo(0.5, 0);
-		fightersMenuData.fightersMenu.targetWidth = storeWidth;
-		fightersMenuData.fightersMenu.targetHeight = storeHeight;
-		fightersMenuData.fightersMenu.inputEnabled = true; //consume events
-		fightersMenuData.fightersMenu.UpdateImageSizes(); //Needed for changing the anchor
-		fightersMenuGroup.add(fightersMenuData.fightersMenu);
-
-		var newFighterText = this.game.add.bitmapText(0, 16, 'font64', "Fighters");
-		fightersMenuData.fightersMenu.addChild(newFighterText);
-		newFighterText.anchor.setTo(0.5);
-
-		var newTray = new Phaser.NinePatchImage(this, 0, newFighterText.bottom+8, "trayNine", null);
-		newTray.anchor.setTo(0.5, 0);
-		newTray.targetWidth = storeWidth-32;
-		newTray.targetHeight = fightersMenuData.fightersMenu.targetHeight-100;
-		fightersMenuData.fightersMenu.addChild(newTray);
-		newTray.UpdateImageSizes(); //Needed for changing the anchor
-
-		var button = new Phaser.NinePatchImage(this, 0, newTray.y + newTray.targetHeight + 8, "buttonNine", null);
-		button.anchor.setTo(0.5, 0);
-		button.targetWidth = storeWidth-32;
-		button.targetHeight = 50;
-		fightersMenuData.fightersMenu.addChild(button);
-		button.UpdateImageSizes(); //Needed for changing the anchor
-		button.inputEnabled = true; //consume events
-		button.events.onInputDown.add(this.createFighter.bind(this));
-
-		var newFighterText = this.game.add.bitmapText(0, button.y+(button.targetHeight/2), 'font64', "New Fighter");
-		newFighterText.tint = 0x000000;
-		fightersMenuData.fightersMenu.addChild(newFighterText);
-		newFighterText.anchor.setTo(0.5);
-
-		//kill until opened
-		fightersMenuData.fightersMenu.kill();
-	},
-
-	displayFightersMenu: function(){
-		this.pauseGame();
-
-		hudData.shadowBlanket.revive();
-		fightersMenuData.fightersMenu.revive();
-	},
-
-	//FIGHTERS MENU ************************************************************
+	//FOCUS MENU ************************************************************
 	initFocusMenu: function(){
 		focusMenuGroup = this.game.add.group();
 		focusMenuGroup.fixedToCamera = true;
@@ -525,17 +476,20 @@ szGame.Game.prototype = {
 		focusMenuData.exitText.anchor.setTo(0.5);
 		focusMenuGroup.add(focusMenuData.exitText);
 
-		focusMenuData.healthBg = new Phaser.NinePatchImage(this, iGameWidth, iGameHeight, "dialogNine", null);
-		focusMenuData.healthBg.anchor.setTo(1,0.5);
-		focusMenuData.healthBg.targetWidth = 200;
-		focusMenuData.healthBg.targetHeight = 64;
-		focusMenuData.healthBg.inputEnabled = true; //consume events
-		focusMenuData.healthBg.UpdateImageSizes(); //Needed for changing the anchor
-		focusMenuGroup.add(focusMenuData.healthBg);
+		focusMenuData.infoMenuBg = new Phaser.NinePatchImage(this, iGameWidth, iGameHeight, "dialogNine", null, "0000ff");
+		focusMenuData.infoMenuBg.anchor.setTo(1,0.5);
+		focusMenuData.infoMenuBg.targetWidth = 100;
+		focusMenuData.infoMenuBg.targetHeight = 64;
+		focusMenuData.infoMenuBg.inputEnabled = true;
+		focusMenuData.infoMenuBg.events.onInputDown.add(function(){
+			this.showNPCinfoMenu(gameData.focusObj);
+		}.bind(this));
+		focusMenuData.infoMenuBg.UpdateImageSizes(); //Needed for changing the anchor
+		focusMenuGroup.add(focusMenuData.infoMenuBg);
 
-		focusMenuData.healthText = this.game.add.bitmapText(iGameWidth-128, iGameHeight-12, 'font64', "20/100");
-		focusMenuData.healthText.anchor.setTo(0.5);
-		focusMenuGroup.add(focusMenuData.healthText);
+		focusMenuData.infoMenuText = this.game.add.bitmapText(iGameWidth-80, iGameHeight-12, 'font64', "i");
+		focusMenuData.infoMenuText.anchor.setTo(0.5);
+		focusMenuGroup.add(focusMenuData.infoMenuText);
 
 		focusMenuData.focusMenuBg = new Phaser.NinePatchImage(this, iGameWidth, iGameHeight, "dialogNine", null);
 		focusMenuData.focusMenuBg.anchor.setTo(0.5);
@@ -546,15 +500,19 @@ szGame.Game.prototype = {
 		focusMenuData.focusMenuBg.UpdateImageSizes(); //Needed for changing the anchor
 		focusMenuGroup.add(focusMenuData.focusMenuBg);
 
-		focusMenuData.sprite = focusMenuGroup.create(iGameWidth-20, iGameHeight-20, "spritesheet", 'galaga1');
+		focusMenuData.sprite = focusMenuGroup.create(iGameWidth-20, iGameHeight-30, "spritesheet", 'galaga1');
 		focusMenuData.sprite.anchor.setTo(0.5);
+
+		focusMenuData.healthText = this.game.add.bitmapText(iGameWidth-32, iGameHeight-10, 'font64', "20/100");
+		focusMenuData.healthText.anchor.setTo(0.5);
+		focusMenuData.healthText.scale.setTo(0.5);
+		focusMenuGroup.add(focusMenuData.healthText);
 
 		//kill until opened
 		focusMenuGroup.visible = false;
 	},
 
 	showFocusMenu: function(_npc){
-
 		//update sprite
 		focusMenuData.sprite.loadTexture(_npc.sprite.key);
 		if(focusMenuData.sprite.frameName != "")
@@ -565,10 +523,6 @@ szGame.Game.prototype = {
 		focusMenuData.healthText.setText(_npc.curHp+"/"+_npc.maxHp);
 		var tint = (scale == 1)? arrHealthbarColors[9] : arrHealthbarColors[Math.floor(scale*10)]
 	  focusMenuData.healthText.tint = tint;
-
-
-
-
 
 		focusMenuGroup.visible = true;
 	},
@@ -581,10 +535,124 @@ szGame.Game.prototype = {
 		}
 	},
 
+	//FIGHTERS MENU ************************************************************
+	initFightersMenu: function(){
+		fightersMenuGroup = this.game.add.group();
+		fightersMenuGroup.fixedToCamera = true;
+
+		var storeWidth = 400;
+		var storeHeight = 500;
+
+		fightersMenuData.fightersMenuBg = new Phaser.NinePatchImage(this, iGameWidth/2, (iGameHeight-storeHeight)/2, "dialogNine", null);
+		fightersMenuData.fightersMenuBg.anchor.setTo(0.5, 0);
+		fightersMenuData.fightersMenuBg.targetWidth = storeWidth;
+		fightersMenuData.fightersMenuBg.targetHeight = storeHeight;
+		fightersMenuData.fightersMenuBg.inputEnabled = true; //consume events
+		fightersMenuData.fightersMenuBg.UpdateImageSizes(); //Needed for changing the anchor
+		fightersMenuGroup.add(fightersMenuData.fightersMenuBg);
+
+		var newFighterText = this.game.add.bitmapText(0, 16, 'font64', "Fighters");
+		fightersMenuData.fightersMenuBg.addChild(newFighterText);
+		newFighterText.anchor.setTo(0.5);
+
+		var newTray = new Phaser.NinePatchImage(this, 0, newFighterText.bottom+8, "trayNine", null);
+		newTray.anchor.setTo(0.5, 0);
+		newTray.targetWidth = storeWidth-32;
+		newTray.targetHeight = fightersMenuData.fightersMenuBg.targetHeight-100;
+		fightersMenuData.fightersMenuBg.addChild(newTray);
+		newTray.UpdateImageSizes(); //Needed for changing the anchor
+
+		var button = new Phaser.NinePatchImage(this, 0, newTray.y + newTray.targetHeight + 8, "buttonNine", null);
+		button.anchor.setTo(0.5, 0);
+		button.targetWidth = storeWidth-32;
+		button.targetHeight = 50;
+		fightersMenuData.fightersMenuBg.addChild(button);
+		button.UpdateImageSizes(); //Needed for changing the anchor
+		button.inputEnabled = true; //consume events
+		button.events.onInputDown.add(this.createFighter.bind(this));
+
+		var newFighterText = this.game.add.bitmapText(0, button.y+(button.targetHeight/2), 'font64', "New Fighter");
+		newFighterText.tint = 0x000000;
+		fightersMenuData.fightersMenuBg.addChild(newFighterText);
+		newFighterText.anchor.setTo(0.5);
+
+		fightersMenuGroup.visible = false;
+	},
+
+	showFightersMenu: function(){
+		this.pauseGame();
+
+		hudData.shadowBlanket.revive();
+		fightersMenuGroup.visible = true;
+	},
+
+	//FIGHTER INFO MENU ************************************************************
+	initNPCinfoMenu: function(){
+		npcInfoMenuGroup = this.game.add.group();
+		npcInfoMenuGroup.fixedToCamera = true;
+
+		var storeWidth = 400;
+		var storeHeight = 500;
+
+		npcInfoMenuData.infoMenuBg = new Phaser.NinePatchImage(this, iGameWidth/2, (iGameHeight-storeHeight)/2, "dialogNine", null);
+		npcInfoMenuData.infoMenuBg.anchor.setTo(0.5, 0);
+		npcInfoMenuData.infoMenuBg.targetWidth = storeWidth;
+		npcInfoMenuData.infoMenuBg.targetHeight = storeHeight;
+		npcInfoMenuData.infoMenuBg.inputEnabled = true; //consume events
+		npcInfoMenuData.infoMenuBg.UpdateImageSizes(); //Needed for changing the anchor
+		npcInfoMenuGroup.add(npcInfoMenuData.infoMenuBg);
+
+		npcInfoMenuData.nameText = this.game.add.bitmapText(0, 16, 'font64', "SET NAME HERE");
+		npcInfoMenuData.nameText.anchor.setTo(0.5);
+		npcInfoMenuData.infoMenuBg.addChild(npcInfoMenuData.nameText);
+
+		npcInfoMenuData.tray = new Phaser.NinePatchImage(this, 0, npcInfoMenuData.nameText.bottom+8, "trayNine", null);
+		npcInfoMenuData.tray.anchor.setTo(0.5, 0);
+		npcInfoMenuData.tray.targetWidth = storeWidth-32;
+		npcInfoMenuData.tray.targetHeight = npcInfoMenuData.infoMenuBg.targetHeight-100;
+		npcInfoMenuData.infoMenuBg.addChild(npcInfoMenuData.tray);
+		npcInfoMenuData.tray.UpdateImageSizes(); //Needed for changing the anchor
+
+		npcInfoMenuData.repairBtn = new Phaser.NinePatchImage(this, 0, npcInfoMenuData.tray.y + npcInfoMenuData.tray.targetHeight + 8, "buttonNine", null);
+		npcInfoMenuData.repairBtn.anchor.setTo(0.5, 0);
+		npcInfoMenuData.repairBtn.targetWidth = storeWidth-32;
+		npcInfoMenuData.repairBtn.targetHeight = 50;
+		npcInfoMenuData.infoMenuBg.addChild(npcInfoMenuData.repairBtn);
+		npcInfoMenuData.repairBtn.UpdateImageSizes(); //Needed for changing the anchor
+		npcInfoMenuData.repairBtn.inputEnabled = true; //consume events
+		npcInfoMenuData.repairBtn.events.onInputDown.add(function(){
+			this.npcMenuRepair(gameData.focusObj);
+		}.bind(this));
+
+		npcInfoMenuData.repairText = this.game.add.bitmapText(0, npcInfoMenuData.repairBtn.y+(npcInfoMenuData.repairBtn.targetHeight/2), 'font64', "Repair");
+		npcInfoMenuData.repairText.tint = 0x000000;
+		npcInfoMenuData.infoMenuBg.addChild(npcInfoMenuData.repairText);
+		npcInfoMenuData.repairText.anchor.setTo(0.5);
+
+		npcInfoMenuGroup.visible = false;
+	},
+
+	showNPCinfoMenu: function(_npc){
+		this.pauseGame();
+		this.closeMenus();
+
+		npcInfoMenuData.nameText.setText(_npc.name);
+
+		npcInfoMenuGroup.visible = true;
+		hudData.shadowBlanket.revive();
+	},
+
+	npcMenuRepair: function(_npc){
+		var repairCost = (_npc.maxHp - _npc.curHp)*10;
+		this.moneyEvent({x: this.game.camera.view.centerX, y:this.game.camera.view.centerY}, -1*repairCost);
+		_npc.curHp = _npc.maxHp;
+	},
+
   //MISC FUNCTIONS *************************************************************
 	closeMenus: function(){
 		hudData.shadowBlanket.kill();
-		fightersMenuData.fightersMenu.kill();
+		fightersMenuGroup.visible = false;
+		npcInfoMenuGroup.visible = false;
 	},
 
   starFlash: function(){

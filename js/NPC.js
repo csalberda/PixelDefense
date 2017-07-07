@@ -18,7 +18,7 @@ function NPC(_name, _infoObj) {
 	this.bulletLifespan = _infoObj.bulletLifespan;
   this.targetingDistance = _infoObj.targetingDistance;
 
-  this.curHp = this.maxHp;
+  this.curHp = this.maxHp/2; //qwer
   this.bFocused = false;
 
 };
