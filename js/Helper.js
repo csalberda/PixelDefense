@@ -30,12 +30,24 @@ function findClosestObjAlive(_obj, _arr){
 	return closestObj;
 }
 
-function repeatEvent(_num, _delay, _event, _onComplete, _game){
+// function repeatEvent(_num, _delay, _event, _onComplete, _game){
+//
+// 	_event();
+//
+// 	if(_num > 1)
+// 	_game.game.time.events.add(_delay, repeatSpawnEvent.bind(this, _num-1, _delay, _event, _onComplete, _game), this);
+// 	else
+// 	_onComplete();
+// }
 
-	_event();
+function repeatSpawnEvent(_array, _delay, _event, _onComplete, _game){
 
-	if(_num > 1)
-	_game.game.time.events.add(_delay, repeatEvent.bind(this, _num-1, _delay, _event, _onComplete, _game), this);
+	_event(_array[0]);
+
+	if(_array.length > 1){
+		var type = _array.shift();
+		_game.game.time.events.add(_delay, repeatSpawnEvent.bind(this, _array, _delay, _event, _onComplete.bind(this, type), _game), this);
+	}
 	else
 	_onComplete();
 }

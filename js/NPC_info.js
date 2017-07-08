@@ -1,3 +1,5 @@
+asteroidColors = [0x995343,0x996B43,0x998243,0x999143,0x000000];
+
 fighterTypeInfo = {
   galagaFighter:{
     name : "galagaFighter",
@@ -20,6 +22,24 @@ fighterTypeInfo = {
 }
 
 enemyTypeInfo = {
+  asteroid:{
+    name : "asteroid",
+    maxHp : 20,
+    value : 1000,
+  	maxThrust : 100,
+  	maxHp : 20,
+  	maxSheild : 100,
+  	maxVelocity : 50,
+  	shield : 100,
+  	maxHandling : 200,
+  	defaultDrag : 20,
+  	breaks : 100,
+  	bulletDamage : 5,
+  	bulletCooldownTime : 500,
+  	bulletSpeed : 400,
+  	bulletLifespan : 500,
+    targetingDistance : 100
+  },
   galagaGreen:{
     name : "galagaGreen",
     maxHp : 20,

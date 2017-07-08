@@ -11,9 +11,42 @@ function Enemy(_name, _type, _game) {
 Enemy.prototype = Object.create(NPC.prototype); // New prototype inherits parent's prototype
 Enemy.prototype.constructor = Enemy;					// Redefine this constructor to self, not parent
 
-
+//CREATE ***************************************************************************
 Enemy.prototype.createEnemy = function(){
 
+	console.log(this.type);
+
+	switch (this.type) {
+		case "asteroid": this.createAsteroid(); break;
+		case "galagaGreen":	this.createBulletEnemy(); break;
+	}
+
+
+}
+
+Enemy.prototype.createAsteroid = function(){
+
+	var location;
+	switch (this.game.rnd.integerInRange(0,3)) {
+		case 0: location = {x: this.game.rnd.integerInRange(0,this.game.world.width), y:-10}; break; //TOP
+		case 1: location = {x: this.game.rnd.integerInRange(0,this.game.world.width), y:this.game.world.height+10}; break; //BOTTOM
+		case 2: location = {x: -10, y:this.game.rnd.integerInRange(0,this.game.world.height)}; break; //LEFT
+		case 3: location = {x: this.game.world.width+10, y:this.game.rnd.integerInRange(0,this.game.world.height)}; break; //RIGHT
+	}
+
+	this.sprite = enemyGroup.create(location.x, location.y, 'spritesheet', this.type+"0");
+	this.sprite.anchor.setTo(0.5);
+	this.game.physics.enable(this.sprite, Phaser.Physics.ARCADE);
+	this.sprite.body.collideWorldBounds = true;
+	this.sprite.inputEnabled = true;
+	this.sprite.events.onInputDown.add(this.characterSelected.bind(this));
+
+	this.sprite.data.parentObject = this; //Give sprite a reference to this parent object
+
+	this.createHealthBar(this.sprite);
+}
+
+Enemy.prototype.createBulletEnemy = function(){
 	this.bulletGroup = enemyBulletGroup;
 
 	var location;
@@ -43,7 +76,29 @@ Enemy.prototype.createEnemy = function(){
 	this.createHealthBar(this.sprite);
 }
 
+
+//AI ***************************************************************************
 Enemy.prototype.enemyAI = function(_arrTargets){
+	switch (this.type) {
+		case "asteroid": this.enemyAsteroidAI(_arrTargets); break;
+		case "galagaGreen":	this.enemyBulletAI(_arrTargets); break;
+	}
+}
+
+Enemy.prototype.enemyAsteroidAI = function(_arrTargets){
+
+	console.log("enemyAsteroidAI");
+
+	this.sprite.body.maxVelocity.set(this.maxVelocity);
+
+	//FIND CLOSEST TARGET
+	var target = findClosestObjAlive(this.sprite, _arrTargets);
+	//THRUST
+	this.game.physics.arcade.accelerationFromRotation(this.sprite.rotation-1.5708, this.maxThrust, this.sprite.body.acceleration);
+
+}
+
+Enemy.prototype.enemyBulletAI = function(_arrTargets){
 
 	this.sprite.body.maxVelocity.set(this.maxVelocity);
 
@@ -61,6 +116,9 @@ Enemy.prototype.enemyAI = function(_arrTargets){
 		this.fireBullet();
 	}
 }
+
+
+
 
 Enemy.prototype.enemyHit = function(_bullet) {
 	_bullet.kill();

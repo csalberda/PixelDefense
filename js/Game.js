@@ -10,7 +10,7 @@ var buildDialogGroup, shipDialogGroup;
 var fighterGroup, satelliteGroup, enemyGroup, planetGroup, civShipGroup;
 var fighterBulletGroup, satelliteBulletGroup, enemyBulletGroup;
 var hudGroup, hudIconGroup;
-var focusedMenuGroup, fightersMenuGroup, npcInfoMenuGroup;
+var generalDialogGroup, fightersMenuGroup, npcInfoMenuGroup;
 
 var focusedTile = null;
 var arrPlanetColors = [0xc15757, 0xc17d57, 0xc1a157, 0xc1c157, 0xa4c157, 0x76c157, 0x57c173, 0x57c19a, 0x57c1bd, 0x57aac1, 0x5788c1, 0x5761c1, 0x7557c1, 0x9157c1, 0xb257c1, 0xc157ad, 0xc15783];
@@ -20,7 +20,7 @@ var textStyle = {font: "16px Courier", fill:"#ffffff"};
 
 var gameData = {
 	money:5000,
-	wave:1,
+	waveNum:0,
 	focusObj: null,
 	bAllEnemiesSpawned: true,
 	bAllCivShipsSpawned: true,
@@ -50,6 +50,9 @@ var npcInfoMenuData = {
 }
 var fightersMenuData = {
 	fightersMenu: null
+}
+var generalDialogData = {
+	generalDialogMenu: null
 }
 
 
@@ -83,6 +86,7 @@ szGame.Game.prototype = {
 		this.createPlanets(5);
 		this.createHUD();
 
+		this.initGeneralDialog();
 		this.initFightersMenu();
 		this.initNPCinfoMenu();
 		this.initFocusMenu();
@@ -224,7 +228,7 @@ szGame.Game.prototype = {
 		hudData.buildSatelliteButton.inputEnabled = true;
 		hudData.buildSatelliteButton.events.onInputDown.add(this.createSatellite.bind(this));
 
-		hudData.waveText = this.game.add.bitmapText(iGameWidth-10, 10, 'font64', "Wave "+gameData.wave, hudData.textSize);
+		hudData.waveText = this.game.add.bitmapText(iGameWidth-10, 10, 'font64', "Wave "+gameData.waveNum, hudData.textSize);
 		hudGroup.addChild(hudData.waveText);
 		hudData.waveText.anchor.setTo(1, 0.5);
 
@@ -253,7 +257,7 @@ szGame.Game.prototype = {
 
 	updateHudText: function(){
 		hudData.moneyText.setText("$"+gameData.money);
-		hudData.waveText.setText("Wave "+gameData.wave);
+		hudData.waveText.setText("Wave "+gameData.waveNum);
 		hudData.enemiesText.setText(enemyGroup.countDead()+"/"+enemyGroup.length);
 	},
 
@@ -408,8 +412,8 @@ szGame.Game.prototype = {
 		enemyBulletGroup.setAll('anchor.y', 0.5);
 	},
 
-	createEnemy: function(){
-		var newEnemy = new Enemy(arrEnemies.length+1, "galagaGreen", this);
+	createEnemy: function(_type){
+		var newEnemy = new Enemy(arrEnemies.length+1, enemyCodes[_type], this);
 		arrEnemies.push(newEnemy);
 		this.newHudIcon(newEnemy.sprite);
 	},
@@ -535,6 +539,64 @@ szGame.Game.prototype = {
 		}
 	},
 
+	//GENERAL DIALOG ************************************************************
+	initGeneralDialog: function(){
+		generalDialogGroup = this.game.add.group();
+		generalDialogGroup.fixedToCamera = true;
+
+		var dialogWidth = 400;
+		var dialogHeight = 500;
+
+		generalDialogData.generalDialogBg = new Phaser.NinePatchImage(this, iGameWidth/2, (iGameHeight-dialogHeight)/2, "dialogNine", null);
+		generalDialogData.generalDialogBg.anchor.setTo(0.5, 0);
+		generalDialogData.generalDialogBg.targetWidth = dialogWidth;
+		generalDialogData.generalDialogBg.targetHeight = dialogHeight;
+		generalDialogData.generalDialogBg.inputEnabled = true; //consume events
+		generalDialogData.generalDialogBg.UpdateImageSizes(); //Needed for changing the anchor
+		generalDialogGroup.add(generalDialogData.generalDialogBg);
+
+		generalDialogData.newTray = new Phaser.NinePatchImage(this, 0, 16, "trayNine", null);
+		generalDialogData.newTray.anchor.setTo(0.5, 0);
+		generalDialogData.newTray.targetWidth = dialogWidth-32;
+		generalDialogData.newTray.targetHeight = generalDialogData.generalDialogBg.targetHeight-88;
+		generalDialogData.generalDialogBg.addChild(generalDialogData.newTray);
+		generalDialogData.newTray.UpdateImageSizes(); //Needed for changing the anchor
+
+		generalDialogData.dialogText = this.game.add.bitmapText(0, generalDialogData.newTray.y+generalDialogData.newTray.targetHeight/2, 'font64', "DIALOG TEXT HERE");
+		generalDialogData.generalDialogBg.addChild(generalDialogData.dialogText);
+		generalDialogData.dialogText.anchor.setTo(0.5);
+
+		generalDialogData.button = new Phaser.NinePatchImage(this, 0, generalDialogData.newTray.y + generalDialogData.newTray.targetHeight + 8, "buttonNine", null);
+		generalDialogData.button.anchor.setTo(0.5, 0);
+		generalDialogData.button.targetWidth = dialogWidth-32;
+		generalDialogData.button.targetHeight = 50;
+		generalDialogData.generalDialogBg.addChild(generalDialogData.button);
+		generalDialogData.button.UpdateImageSizes(); //Needed for changing the anchor
+		generalDialogData.button.inputEnabled = true; //consume events
+
+		generalDialogData.buttonText = this.game.add.bitmapText(0, generalDialogData.button.y+(generalDialogData.button.targetHeight/2), 'font64', "BUTTON TEXT HERE");
+		generalDialogData.buttonText.tint = 0x000000;
+		generalDialogData.generalDialogBg.addChild(generalDialogData.buttonText);
+		generalDialogData.buttonText.anchor.setTo(0.5);
+
+		generalDialogGroup.visible = false;
+	},
+
+	showGeneralDialog: function(_text, _buttonText, _buttonCallback){
+		this.pauseGame();
+
+		generalDialogData.dialogText.setText(_text);
+		generalDialogData.buttonText.setText(_buttonText);
+
+		generalDialogData.button.events.onInputDown.add(function(){
+			this.closeMenus();
+			_buttonCallback();
+		}.bind(this));
+
+		hudData.shadowBlanket.revive();
+		generalDialogGroup.visible = true;
+	},
+
 	//FIGHTERS MENU ************************************************************
 	initFightersMenu: function(){
 		fightersMenuGroup = this.game.add.group();
@@ -651,6 +713,7 @@ szGame.Game.prototype = {
   //MISC FUNCTIONS *************************************************************
 	closeMenus: function(){
 		hudData.shadowBlanket.kill();
+		generalDialogGroup.visible = false;
 		fightersMenuGroup.visible = false;
 		npcInfoMenuGroup.visible = false;
 	},
@@ -672,32 +735,40 @@ szGame.Game.prototype = {
   startNextWave: function(){
 		if(!gameData.bAllEnemiesSpawned || !gameData.bAllCivShipsSpawned) return;
 
-    //INIT NEXT WAVE
-    gameData.enemies+=5;
-    this.updateHudText();
+		var startWave = function(){
+	    //INIT NEXT WAVE
+	    this.updateHudText();
+			gameData.bAllEnemiesSpawned = false;
+			gameData.bAllCivShipsSpawned = false;
 
-		gameData.bAllEnemiesSpawned = false;
-		gameData.bAllCivShipsSpawned = false;
+	    this.broadcastMessage("Wave "+gameData.waveNum, function(){
 
+	      repeatSpawnEvent(
+					waveInfo[gameData.waveNum].arrEnemyTypes, //repeat
+					waveInfo[gameData.waveNum].enemyDelay,	//delay
+					this.createEnemy.bind(this),
+					function(){ console.log("done spawning enemies"); gameData.bAllEnemiesSpawned = true; }.bind(this),
+					this
+				); //Enemies
 
-    this.broadcastMessage("Wave "+gameData.wave, function(){
-      repeatEvent(
-				gameData.wave+6, 	//repeat
-				8000,							//delay
-				this.createEnemy.bind(this),
-				function(){ console.log("done with enemies"); gameData.bAllEnemiesSpawned = true; }.bind(this),
-				this
-			);
-			repeatEvent(
-				gameData.wave+4, 	//repeat
-				10000,							//delay
-				this.createCivShip.bind(this),
-				function(){ console.log("done with civShips"); gameData.bAllCivShipsSpawned = true; }.bind(this),
-				this
-			);
-    }.bind(this));
+				repeatSpawnEvent(
+					waveInfo[gameData.waveNum].arrCivShipTypes, 	//repeat
+					waveInfo[gameData.waveNum].civShipDelay,	//delay
+					this.createCivShip.bind(this),
+					function(){ console.log("done spawning civShips"); gameData.bAllCivShipsSpawned = true; }.bind(this),
+					this
+				); //CivShips
 
+	    }.bind(this));
+		}.bind(this);
 
+		if(waveInfo[gameData.waveNum].dialogText != undefined){
+			this.showGeneralDialog(waveInfo[gameData.waveNum].dialogText, "OK", startWave)
+			return;
+		}
+		else {
+			startWave();
+		}
   },
 
   newHudIcon: function(_parent){
@@ -730,8 +801,8 @@ szGame.Game.prototype = {
 		if(civShipGroup.length > 0) return;
 		if(!gameData.bAllEnemiesSpawned || !gameData.bAllCivShipsSpawned) return;
 
-    this.broadcastMessage("Wave "+gameData.wave+" Complete", function(){
-			gameData.wave++;
+    this.broadcastMessage("Wave "+gameData.waveNum+" Complete", function(){
+			gameData.waveNum++;
 			this.setCenterText("Next Wave", this.startNextWave.bind(this));
 		}.bind(this));
 
